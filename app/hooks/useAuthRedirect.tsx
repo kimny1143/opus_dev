@@ -2,17 +2,17 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../providers/AuthProvider';
+import { getCookie } from 'cookies-next';
 
 const useAuthRedirect = () => {
-  const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (user === null) {
+    const token = getCookie('auth_token'); // クッキー名を統一
+    if (!token) {
       router.push('/login');
     }
-  }, [user, router]);
+  }, [router]);
 };
 
 export default useAuthRedirect;

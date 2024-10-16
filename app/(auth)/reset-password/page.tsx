@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import axios from '../../../lib/axios.js';
 import { useRouter } from 'next/navigation';
-import { Button, Input, Card, CardContent, CardHeader, CardTitle } from '@/components/ui/opus-components';
+import { Input, Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/opus-components';
+import { Button } from '@/app/components/ui/Button';
 
 const ResetPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');

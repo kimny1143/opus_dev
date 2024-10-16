@@ -1,0 +1,19 @@
+{
+  "name": "OPUS Dev Container",
+  "dockerComposeFile": ["../docker-compose.yml"],
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "extensions": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "Prisma.prisma",
+    "ms-azuretools.vscode-docker"
+  ],
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "/bin/bash"
+  },
+  "remoteUser": "node",
+  "features": {},
+  "platform": "linux/arm64",
+  "postCreateCommand": "git config --global --add safe.directory /workspace"
+}

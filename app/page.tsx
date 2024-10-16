@@ -1,6 +1,7 @@
 'use client'
 
-import { Button, Card, CardContent, CardHeader, CardTitle, DropdownMenu, DropdownMenuItem } from '@/components/ui/opus-components'
+import { Button } from '@/app/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle, DropdownMenu, DropdownMenuItem } from '@/app/components/ui/opus-components'
 
 export default function Home() {
   return (
