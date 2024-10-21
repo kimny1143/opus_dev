@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import axios from '../../../lib/axios.js';
+import axios from '@/lib/axios';
 import { useRouter } from 'next/navigation';
 import { Input, Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/opus-components';
 import { Button } from '@/app/components/ui/Button';

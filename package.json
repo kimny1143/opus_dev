@@ -1,14 +1,12 @@
 {
   "name": "opus_dev",
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
     "dev": "next dev",
     "clear-cache": "rm -rf .next/cache",
     "dev:clear": "npm run clear-cache && npm run dev",
     "build": "next build",
     "start": "next start -p $PORT",
-    "heroku-postbuild": "npm run build",
     "lint": "next lint",
     "seed": "node --loader ts-node/esm prisma/seed.mts",
     "prisma:migrate": "prisma migrate dev --name dev",

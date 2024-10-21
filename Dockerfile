@@ -1,14 +1,27 @@
-FROM node:20
+FROM --platform=$BUILDPLATFORM node:23-slim
 
 WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma
 
+# 依存関係のインストールとbcryptの再ビルド
 RUN npm install
+RUN npm install --save-dev eslint
+RUN npm install jspdf-autotable
+RUN apt-get update && apt-get install -y python3 make g++
+RUN npm rebuild bcrypt --build-from-source
+RUN npm uninstall bcrypt
+RUN npm install bcryptjs
 
 COPY . .
 
-EXPOSE 3000
+# プロダクションビルドを作成
+RUN npm run build
 
-CMD ["npm", "start"]
+# デフォルトのポート番号を設定
+ENV PORT=3000
+
+EXPOSE $PORT
+
+CMD ["sh", "-c", "npm start"]
