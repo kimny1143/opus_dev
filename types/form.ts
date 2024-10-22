@@ -9,7 +9,8 @@
         contactName: string;
         contactEmail: string;
         contactPhone: string;
-        registrationNumber: string;
+        hasInvoiceRegistration: boolean;
+        registrationNumber?: string;
         categoryId: number | null;
         tagIds: number[];
         // 追加フィールド

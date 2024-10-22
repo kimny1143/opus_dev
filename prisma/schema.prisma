@@ -35,20 +35,22 @@ model Category {
 }
 
 model Client {
-  id                 Int              @id @default(autoincrement())
-  companyName        String?          // Nullable
-  address            String
-  contactName        String
-  contactEmail       String           @unique
-  contactPhone       String
-  registrationNumber String           @unique
-  categoryId         Int?
-  category           Category?        @relation(fields: [categoryId], references: [id])
-  tags               TagsOnClients[]
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  orders             Order[]
-  status             String?          // Nullable         
+  id                     Int            @id @default(autoincrement())
+  companyName            String?
+  address                String
+  contactName            String
+  contactEmail           String
+  contactPhone           String
+  hasInvoiceRegistration Boolean        @default(false) // この行が存在するか確認
+  registrationNumber     String?        @unique
+  categoryId             Int?
+  category               Category?      @relation(fields: [categoryId], references: [id])
+  tags                   TagsOnClients[]
+  orders                 Order[]
+  status                 String?          // Nullable   
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+      
 }
 
 model Tag {

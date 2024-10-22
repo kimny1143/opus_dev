@@ -56,3 +56,8 @@ export const useValidation = (initialValue: string, validationFn: (value: string
 
   return { value, setValue, isValid };
 };
+
+// 登録番号の形式チェック
+export const isValidRegistrationNumber = (value: string): boolean => {
+  return /^T\d{13}$/.test(value);
+};

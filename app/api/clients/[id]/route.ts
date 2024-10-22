@@ -19,6 +19,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const data = await req.json();
+    console.log('受信したデータ:', data); // デバッグ用
+    // 必要に応じてバリデーション
+    if (data.hasInvoiceRegistration && !data.registrationNumber) {
+      return NextResponse.json({ error: '登録番号は必須です。' }, { status: 400 });
+    }
 
     // 既存のタグをクリアし、新しいタグを設定
     const updatedClient = await prisma.client.update({
@@ -29,7 +34,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         contactName: data.contactName,
         contactEmail: data.contactEmail,
         contactPhone: data.contactPhone,
-        registrationNumber: data.registrationNumber,
+        hasInvoiceRegistration: data.hasInvoiceRegistration,
+        registrationNumber: data.hasInvoiceRegistration && data.registrationNumber ? data.registrationNumber : null, // 更新
         categoryId: data.categoryId,
         tags: {
           deleteMany: {}, // 既存の関連を削除

@@ -23,7 +23,8 @@ interface Client {
   contactName: string;
   contactEmail: string;
   contactPhone: string;
-  registrationNumber: string;
+  hasInvoiceRegistration: boolean;
+  registrationNumber?: string;
   createdAt: string;
   updatedAt: string;
   category?: {
@@ -191,7 +192,19 @@ const ClientsPage: React.FC = () => {
               <TableCell>{client.companyName}</TableCell>
               <TableCell>{client.contactName}</TableCell>
               <TableCell>{client.category?.name || 'なし'}</TableCell>
-              <TableCell>{client.tags.map(toc => toc.tag.name).join(', ') || 'なし'}</TableCell>
+              <TableCell>
+                <div className="flex flex-wrap gap-1">
+                  {client.tags.length > 0 ? (
+                    client.tags.map(toc => (
+                      <span key={toc.tag.id} className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-sm">
+                        {toc.tag.name}
+                      </span>
+                    ))
+                  ) : (
+                    'なし'
+                  )}
+                </div>
+              </TableCell>
               <TableCell>
                 <Button variant="outline" size="sm" onClick={() => openModal(client)}>編集</Button>
                 <Link href={`/clients/${client.id}`}>
@@ -204,17 +217,19 @@ const ClientsPage: React.FC = () => {
         </TableBody>
       </Table>
       <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <ClientForm
-          client={selectedClient ? {
-            ...selectedClient,
-            categoryId: selectedClient.category?.id || null,
-            tagIds: selectedClient.tags.map(toc => toc.tag.id)
-          } : null}
-          onSubmit={handleSubmit}
-          onClose={closeModal}
-          categories={categories}
-          tags={tags}
-        />
+      <ClientForm
+        client={selectedClient ? {
+          ...selectedClient,
+          categoryId: selectedClient.category?.id || null,
+          tagIds: selectedClient.tags.map(toc => toc.tag.id),
+          registrationNumber: selectedClient.registrationNumber || '',
+          hasInvoiceRegistration: selectedClient.hasInvoiceRegistration, // 追加
+        } : null}
+        onSubmit={handleSubmit}
+        onClose={closeModal}
+        categories={categories}
+        tags={tags}
+      />
       </Modal>
     </div>
   );
