@@ -7,12 +7,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/opus-components';
 import Modal from '@/app/components/ui/Modal';
-import ClientForm from '@/app/components/ClientForm';
+import ClientForm from '@/app/(authenticated)/components/ClientForm';
 import { Category, Tag } from '@prisma/client';
 import { CustomFormData } from '@/types/form';
 import ErrorMessage from '@/app/components/ErrorMessage';
-import { useAuth } from '@/app/providers/AuthProvider'; // AuthProviderのフックをインポート
 import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
+import useAuthRedirect from '@/app/hooks/useAuthRedirect';
+import { getCookie } from 'cookies-next';
 
 interface Client {
   id: number;
@@ -37,6 +39,8 @@ interface Client {
 }
 
 const ClientsPage: React.FC = () => {
+  useAuthRedirect();
+
   const [clients, setClients] = React.useState<Client[]>([]);
   const [filteredClients, setFilteredClients] = React.useState<Client[]>([]);
   const [categories, setCategories] = React.useState<Category[]>([]);
@@ -47,15 +51,14 @@ const ClientsPage: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedClient, setSelectedClient] = React.useState<Client | null>(null);
-  const { user } = useAuth(); // AuthProviderからユーザー情報を取得
   const router = useRouter();
 
   const fetchData = async () => {
     try {
       const [clientsRes, categoriesRes, tagsRes] = await Promise.all([
-        axios.get('/api/clients'), // '/api/' を追加
-        axios.get('/api/categories'), // '/api/' を追加
-        axios.get('/api/tags') // '/api/' を追加
+        axios.get('/api/clients'),
+        axios.get('/api/categories'),
+        axios.get('/api/tags')
       ]);
 
       const fetchedClients: Client[] = clientsRes.data;
@@ -76,18 +79,14 @@ const ClientsPage: React.FC = () => {
   };
 
   React.useEffect(() => {
-    if (!user) {
-      router.push('/login'); // ユーザーが認証されていない場合、ログインページへリダイレクト
-      return;
-    }
     fetchData();
-  }, [user, router]);
+  }, []);
 
   React.useEffect(() => {
     const applyFilters = () => {
       const filtered = clients.filter(client =>
-        (client.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          client.contactName.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        ((client.companyName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (client.contactName?.toLowerCase() || '').includes(searchTerm.toLowerCase())) &&
         (categoryFilter === '' || categoryFilter === 'すべて' || client.category?.name === categoryFilter)
       );
       setFilteredClients(filtered);
@@ -108,16 +107,45 @@ const ClientsPage: React.FC = () => {
 
   const handleSubmit = async (data: CustomFormData) => {
     try {
+      const token = localStorage.getItem('auth_token');
+      console.log('認証トークン:', token);
+      if (!token) {
+        console.error('認証トークンが見つかりません');
+        setError('認証エラーが発生しました。再度ログインしてください。');
+        router.push('/login');
+        return;
+      }
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
       if (selectedClient) {
-        await axios.put(`/api/clients/${selectedClient.id}`, data); // 修正
+        await axios.put(`/api/clients/${selectedClient.id}`, data, config);
       } else {
-        await axios.post('/api/clients', data); // 修正
+        await axios.post('/api/clients', data, config);
       }
       closeModal();
       fetchData();
     } catch (error) {
       console.error('クライアントの作成・更新に失敗しました:', error);
       setError('クライアントの作成・更新に失敗しました。再度お試しください。');
+    }
+  };
+  const handleDelete = async (clientId: number) => {
+    if (window.confirm('本当にこの取引先を削除しますか？')) {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('認証トークンが見つかりません');
+        }
+        const config = {
+          headers: { Authorization: `Bearer ${token}` }
+        };
+        await axios.delete(`/api/clients/${clientId}`, config);
+        fetchData(); // 取引先リストを更新
+      } catch (error) {
+        console.error('取引先の削除に失敗しました:', error);
+        setError('取引先の削除に失敗しました。再度お試しください。');
+      }
     }
   };
 
@@ -169,6 +197,7 @@ const ClientsPage: React.FC = () => {
                 <Link href={`/clients/${client.id}`}>
                   <Button variant="outline" size="sm">詳細</Button>
                 </Link>
+                <Button variant="outline" size="sm" onClick={() => handleDelete(client.id)}>削除</Button>
               </TableCell>
             </TableRow>
           ))}

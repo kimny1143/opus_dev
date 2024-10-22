@@ -22,11 +22,6 @@ export const verifyToken = (token: string): Promise<any> => {
 };
 
 export const getToken = (req: NextRequest): string | undefined => {
-  const cookieHeader = req.headers.get('cookie');
-  if (!cookieHeader) return undefined;
-
-  const cookies = Object.fromEntries(
-    cookieHeader.split('; ').map((v) => v.split('=').map(decodeURIComponent))
-  );
-  return cookies['auth_token'];
+  const token = req.cookies.get('auth_token')?.value;
+  return token;
 };

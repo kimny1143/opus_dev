@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { verifyToken } from '@/lib/auth';
 
-export function authMiddleware(request: NextRequest) {
+export async function authMiddleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
 
   if (!token) {
-    console.log('認証トークンがありません');
+    console.log('認証トークンがありません。');
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
   try {
-    console.log('トークンが見つかりました:', token);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    console.log('デコードされたトークン:', decoded);
+    await verifyToken(token);
+    console.log('認証トークンが有効です。');
     return NextResponse.next();
   } catch (error) {
     console.error('認証エラー:', error);

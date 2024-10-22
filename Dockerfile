@@ -15,6 +15,8 @@ RUN npm uninstall bcrypt
 RUN npm install bcryptjs
 
 COPY . .
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # プロダクションビルドを作成
 RUN npm run build

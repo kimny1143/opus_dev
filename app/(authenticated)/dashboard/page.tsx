@@ -2,9 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import axios from '@/lib/axios';
+import { useAuth } from '@/app/providers/AuthProvider';
+import { useRouter } from 'next/navigation';
 
 const DashboardPage = () => {
   const [stats, setStats] = useState<{ userCount: number; clientCount: number } | null>(null);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -16,17 +26,27 @@ const DashboardPage = () => {
       }
     };
 
-    fetchStats();
-  }, []);
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
+
+  if (loading) {
+    return <div>読み込み中...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div>
       <h1>ダッシュボード</h1>
+      <p>ようこそ、{user.name}さん！</p>
       {stats ? (
         <div>
           <p>ユーザー数: {stats.userCount}</p>
           <p>取引先数: {stats.clientCount}</p>
-          {/* 他の統計情報も表示 */}
         </div>
       ) : (
         <p>統計情報を読み込み中...</p>

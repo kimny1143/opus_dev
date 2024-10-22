@@ -39,7 +39,7 @@ const ClientPage: React.FC<ClientPageProps> = ({ params }) => {
   useEffect(() => {
     const fetchClient = async () => {
       try {
-        const response = await axios.get(`/clients/${id}`);
+        const response = await axios.get(`/api/clients/${id}`);
         setClient(response.data);
       } catch (err: any) {
         console.error('取引先の取得に失敗しました。', err.response?.data || err.message);
@@ -66,16 +66,16 @@ const ClientPage: React.FC<ClientPageProps> = ({ params }) => {
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">取引先詳細</h1>
       <div className="mb-4">
-        <p><strong>会社名:</strong> {client.companyName}</p>
+      <p><strong>会社名:</strong> {client.companyName === 'none' ? '個人' : client.companyName}</p>
         <p><strong>所在地:</strong> {client.address}</p>
         <p><strong>担当者名:</strong> {client.contactName}</p>
         <p><strong>メールアドレス:</strong> {client.contactEmail}</p>
         <p><strong>電話番号:</strong> {client.contactPhone}</p>
         <p><strong>登録番号:</strong> {client.registrationNumber}</p>
         <p><strong>カテゴリー:</strong> {client.category?.name || '未設定'}</p>
-        <p><strong>タグ:</strong> {client.tags.map((t) => t.tag.name).join(', ') || '未設定'}</p>
-        <p><strong>作成日:</strong> {new Date(client.createdAt).toLocaleDateString()}</p>
-        <p><strong>更新日:</strong> {new Date(client.updatedAt).toLocaleDateString()}</p>
+        <p><strong>タグ:</strong> {client.tags?.map((t) => t.tag.name).join(', ') || '未設定'}</p>
+        <p><strong>作成日:</strong> {client.createdAt ? new Date(client.createdAt).toLocaleDateString() : '未設定'}</p>
+        <p><strong>更新日:</strong> {client.updatedAt ? new Date(client.updatedAt).toLocaleDateString() : '未設定'}</p>
       </div>
       <div className="flex space-x-4">
         <Link href={`/clients/${id}/edit`}>

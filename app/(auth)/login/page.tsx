@@ -6,49 +6,29 @@ import Link from 'next/link';
 import { Button } from '@/app/components/ui/Button';
 import { Input, Card, CardHeader, CardContent, CardFooter } from '@/app/components/ui/opus-components';
 import { useAuth } from '@/app/providers/AuthProvider';
-import Cookies from 'js-cookie';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
   const router = useRouter();
   const { login } = useAuth();
 
-  const handleLogin = async () => {
-    console.log('ログイン処理開始');
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
     setIsLoading(true);
 
     try {
-      console.log('APIリクエスト送信:', email);
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
-        console.log('ログイン成功');
-        const data = await response.json();
-        // auth_tokenという名前でクッキーを設定
-        Cookies.set('auth_token', data.token, { expires: 7 });
-        await login(email, password);
-        console.log('ダッシュボードへリダイレクト');
-        router.push('/dashboard');
-      } else {
-        console.log('ログイン失敗');
-        const errorData = await response.json();
-        setError(errorData.error || 'ログインに失敗しました');
-      }
+      await login(email, password);
+      // ログイン成功後、ダッシュボードにリダイレクト
+      router.push('/dashboard');
     } catch (err) {
       console.error('ログインエラー:', err);
-      setError('ログイン処理中にエラーが発生しました');
+      setError('メールアドレスまたはパスワードが正しくありません');
     } finally {
-      console.log('ログイン処理終了');
       setIsLoading(false);
     }
   };
@@ -60,7 +40,7 @@ const LoginPage: React.FC = () => {
           <h2 className="text-xl font-bold">ログイン</h2>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+          <form onSubmit={handleLogin}>
             {error && <p className="text-red-500 mb-3">{error}</p>}
             <div className="mb-3">
               <Input
@@ -80,8 +60,8 @@ const LoginPage: React.FC = () => {
                 required
               />
             </div>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full"
               disabled={isLoading}
             >

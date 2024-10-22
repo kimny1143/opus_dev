@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { useAuth } from '../../providers/AuthProvider';
 
 const Sidebar: React.FC = () => {
   return (
@@ -7,7 +8,7 @@ const Sidebar: React.FC = () => {
       <nav className="px-4 py-6">
         <ul>
           <li className="mb-4">
-            <Link href="/">
+            <Link href="/dashboard">
               <span className="text-gray-700 hover:text-gray-900">ダッシュボード</span>
             </Link>
           </li>

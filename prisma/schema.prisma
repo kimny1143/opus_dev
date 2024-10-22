@@ -5,7 +5,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"] // 追加
 }
 
 
@@ -35,7 +36,7 @@ model Category {
 
 model Client {
   id                 Int              @id @default(autoincrement())
-  companyName        String
+  companyName        String?          // Nullable
   address            String
   contactName        String
   contactEmail       String           @unique
@@ -47,7 +48,7 @@ model Client {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   orders             Order[]
-  status             String?   // 例としてString型を使用            
+  status             String?          // Nullable         
 }
 
 model Tag {

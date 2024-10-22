@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/app/components/ui/Button';
 import { Input, Card, CardHeader, CardContent } from '@/app/components/ui/opus-components';
 
-const RegisterPage: React.FC = () => {
+const RegisterPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

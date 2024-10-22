@@ -2,16 +2,20 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCookie } from 'cookies-next';
+import { checkAuthStatus } from '@/app/utils/auth';
 
 const useAuthRedirect = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const token = getCookie('auth_token'); // クッキー名を統一
-    if (!token) {
-      router.push('/login');
-    }
+    const checkAuth = async () => {
+      const authStatus = await checkAuthStatus();
+      console.log('Auth status:', authStatus);
+      if (!authStatus || !authStatus.user) {
+        router.push('/login');
+      }
+    };
+    checkAuth();
   }, [router]);
 };
 

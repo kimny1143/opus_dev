@@ -4,7 +4,7 @@
     import { Category, Tag } from '@prisma/client';
 
     export interface CustomFormData {
-        companyName: string;
+        companyName?: string | null;
         address: string;
         contactName: string;
         contactEmail: string;

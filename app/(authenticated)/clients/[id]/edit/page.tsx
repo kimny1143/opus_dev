@@ -1,15 +1,20 @@
-// app/clients/create/page.tsx
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ClientForm from '@/app/components/ClientForm';
+import ClientForm from '@/app/(authenticated)/components/ClientForm';
 import axios from '@/lib/api';
 import { Category, Tag } from '@prisma/client';
 import { CustomFormData } from '@/types/form';
 
-const CreateClientPage: React.FC = () => {
+type Client = CustomFormData & {
+  id: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+const EditClientPage: React.FC<{ params: { id: string } }> = ({ params }) => {
+  const [client, setClient] = useState<Client | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,10 +24,16 @@ const CreateClientPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [categoriesResponse, tagsResponse] = await Promise.all([
+        const [clientResponse, categoriesResponse, tagsResponse] = await Promise.all([
+          axios.get(`/api/clients/${params.id}`),
           axios.get('/api/categories'),
           axios.get('/api/tags'),
         ]);
+        const clientData = clientResponse.data;
+        setClient({
+          ...clientData,
+          tagIds: clientData.tags.map((tag: { id: number }) => tag.id)
+        });
         setCategories(categoriesResponse.data);
         setTags(tagsResponse.data);
       } catch (err) {
@@ -32,16 +43,16 @@ const CreateClientPage: React.FC = () => {
         setLoading(false);
       }
     };
-
+  
     fetchData();
-  }, []);
+  }, [params.id]);
 
   const handleSubmit = async (formData: CustomFormData) => {
     try {
-      await axios.post('/api/clients', formData);
+      await axios.put(`/api/clients/${params.id}`, formData);
       router.push('/clients');
     } catch (err) {
-      setError('クライアントの作成に失敗しました。');
+      setError('クライアントの更新に失敗しました。');
       console.error(err);
     }
   };
@@ -60,16 +71,18 @@ const CreateClientPage: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl mb-4">新しいクライアントの作成</h1>
-      <ClientForm
-        categories={categories}
-        tags={tags}
-        onSubmit={handleSubmit}
-        client={null}
-        onClose={handleClose}
-      />
+      <h1 className="text-2xl mb-4">取引先の編集</h1>
+      {client && (
+        <ClientForm
+          categories={categories}
+          tags={tags}
+          onSubmit={handleSubmit}
+          client={client}
+          onClose={handleClose}
+        />
+      )}
     </div>
   );
 };
 
-export default CreateClientPage;
+export default EditClientPage;

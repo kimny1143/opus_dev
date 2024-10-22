@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useAuth } from '@/app/providers/AuthProvider';
 import { useForm, Controller } from 'react-hook-form';
 import { Button } from '@/app/components/ui/Button';
 import { Input, Card, CardHeader, CardContent } from '@/app/components/ui/opus-components';
@@ -9,7 +10,7 @@ import { Checkbox } from '@/app/components/ui/Checkbox';
 import { CustomFormData } from '@/types/form';
 import { Category, Tag } from '@prisma/client';
 import ErrorMessage from '@/app/components/ErrorMessage';
-import Cookies from 'js-cookie';
+import TagChip from '@/app/components/Tags/TagChip';
 
 interface ClientFormProps {
   client: CustomFormData | null;
@@ -20,7 +21,8 @@ interface ClientFormProps {
 }
 
 const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onClose, categories, tags }) => {
-  const { control, handleSubmit, formState: { errors }, setValue } = useForm<CustomFormData>({
+  const { user } = useAuth();
+  const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm<CustomFormData>({
     defaultValues: client || {
       companyName: '',
       address: '',
@@ -28,42 +30,72 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onClose, cate
       contactEmail: '',
       contactPhone: '',
       registrationNumber: '',
-      categoryId: 0,
+      categoryId: null,
       tagIds: [],
+      status: 'active',
     },
   });
+  const selectedCategoryId = watch('categoryId');
+  const isPersonal = selectedCategoryId === 1;
+  
+  useEffect(() => {
+    if (isPersonal) {
+      setValue('companyName', 'none');
+    } else if (watch('companyName') === 'none') {
+      setValue('companyName', '');
+    }
+  }, [isPersonal, setValue, watch]);
 
+  // companyName フィールドの render 関数
+  const renderCompanyNameField = () => (
+    <Controller
+      name="companyName"
+      control={control}
+      rules={{ required: !isPersonal }}
+      render={({ field }) => (
+        <div>
+          <Input
+            {...field}
+            type="text"
+            placeholder="会社名"
+            value={isPersonal ? 'none' : field.value?.toString() ?? ''}
+            disabled={isPersonal}
+          />
+          {!isPersonal && <ErrorMessage message={errors.companyName?.message || ''} />}
+        </div>
+      )}
+    />
+  );
+  
   const onSubmitForm = async (data: CustomFormData) => {
+    if (!user) {
+      console.error('ユーザーが認証されていません');
+      return;
+    }
+
     try {
-      // カテゴリーIDとタグIDsを整数に変換
       const formattedData = {
         ...data,
-        categoryId: typeof data.categoryId === 'string' ? parseInt(data.categoryId, 10) : data.categoryId,
+        categoryId: data.categoryId ? Number(data.categoryId) : null,
         tagIds: Array.isArray(data.tagIds) 
           ? data.tagIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id)
           : []
       };
-      const authToken = Cookies.get('auth_token');
-      if (authToken) {
-        // ここで認証トークンを使用してAPIリクエストを送信する
-        await onSubmit(formattedData);
-        onClose();
-      } else {
-        console.error('認証トークンが見つかりません');
-      }
+      await onSubmit(formattedData);
+      onClose();
     } catch (err: any) {
       console.error('送信中にエラーが発生しました', err);
     }
   };
 
-  const FormField = ({ name, rules, placeholder, type = 'text' }: { name: keyof CustomFormData; rules: any; placeholder: string; type?: string }) => (
+  const FormField = ({ name, rules, placeholder, type = 'text', disabled = false }: { name: keyof CustomFormData; rules: any; placeholder: string; type?: string; disabled?: boolean }) => (
     <Controller
       name={name}
       control={control}
       rules={rules}
       render={({ field }) => (
         <div>
-          <Input {...field} type={type} placeholder={placeholder} value={field.value?.toString() ?? ''} />
+          <Input {...field} type={type} placeholder={placeholder} value={field.value?.toString() ?? ''} disabled={disabled} />
           <ErrorMessage message={errors[name]?.message || ''} />
         </div>
       )}
@@ -78,7 +110,31 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onClose, cate
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <FormField name="companyName" rules={{ required: '会社名は必須です。' }} placeholder="会社名" />
+            <Controller
+              name="categoryId"
+              control={control}
+              rules={{ required: 'カテゴリは必須です' }}
+              render={({ field }) => (
+                <div>
+                  <p className="mb-2">カテゴリ</p>
+                  <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="カテゴリを選択" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <ErrorMessage message={errors.categoryId?.message || ''} />
+                </div>
+              )}
+            />
+            {renderCompanyNameField()}
+
             <FormField name="address" rules={{ required: '所在地は必須です。' }} placeholder="所在地" />
             <FormField name="contactName" rules={{ required: '担当者名は必須です。' }} placeholder="担当者名" />
             <FormField
@@ -107,26 +163,6 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onClose, cate
             />
             <FormField name="registrationNumber" rules={{ required: '登録番号は必須です。' }} placeholder="登録番号" />
             <Controller
-              name="categoryId"
-              control={control}
-              rules={{ required: 'カテゴリーを選択してください。' }}
-              render={({ field }) => (
-                <div>
-                  <Select onValueChange={field.onChange} value={field.value?.toString() ?? undefined}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="カテゴリーを選択" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(category => (
-                        <SelectItem key={category.id} value={category.id.toString()}>{category.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <ErrorMessage message={errors.categoryId?.message || ''} />
-                </div>
-              )}
-            />
-            <Controller
               name="tagIds"
               control={control}
               rules={{ required: '少なくとも1つのタグを選択してください。' }}
@@ -135,18 +171,17 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onClose, cate
                   <p className="mb-2">タグを選択</p>
                   <div className="flex flex-wrap gap-2">
                     {tags.map(tag => (
-                      <label key={tag.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={field.value.includes(tag.id)}
-                          onCheckedChange={(checked) => {
-                            const updatedTags = checked
-                              ? [...field.value, tag.id]
-                              : field.value.filter((id: number) => id !== tag.id);
-                            setValue('tagIds', updatedTags);
-                          }}
-                        />
-                        <span>{tag.name}</span>
-                      </label>
+                      <TagChip
+                        key={tag.id}
+                        tag={tag}
+                        isSelected={field.value.includes(tag.id)}
+                        onToggle={(tagId) => {
+                          const updatedTags = field.value.includes(tagId)
+                            ? field.value.filter((id: number) => id !== tagId)
+                            : [...field.value, tagId];
+                          setValue('tagIds', updatedTags);
+                        }}
+                      />
                     ))}
                   </div>
                   <ErrorMessage message={errors.tagIds?.message || ''} />

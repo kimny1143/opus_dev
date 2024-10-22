@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken, getToken } from '@/lib/auth';
 import { JsonWebTokenError } from 'jsonwebtoken';
+import { CustomFormData } from '@/types/form';
 
 export async function GET(req: NextRequest) {
   const token = getToken(req);
@@ -41,23 +42,31 @@ export async function POST(req: NextRequest) {
 
   try {
     await verifyToken(token);
-    const body = await req.json();
-    const { companyName, address, contactName, contactEmail, contactPhone, registrationNumber, categoryId, tags } = body;
+    const body = await req.json() as CustomFormData;
+    const { companyName, address, contactName, contactEmail, contactPhone, registrationNumber, categoryId, tagIds, status } = body;
+
+    console.log('受信したデータ:', body); // デバッグ用
 
     // バリデーションを追加することをお勧めします
+    if (categoryId !== 1 && !companyName) {
+      return NextResponse.json({ error: '法人の場合、会社名は必須です。' }, { status: 400 });
+    }
 
     const newClient = await prisma.client.create({
       data: {
-        companyName,
+        companyName: categoryId === 1 ? 'none' : companyName || undefined,
         address,
         contactName,
         contactEmail,
         contactPhone,
         registrationNumber,
         categoryId,
-        tags: {
-          connect: tags.map((tagId: number) => ({ id: tagId })),
-        },
+        status,
+        tags: tagIds && tagIds.length > 0 ? {
+          create: tagIds.map((tagId: number) => ({
+            tag: { connect: { id: tagId } }
+          }))
+        } : undefined,
       },
       include: {
         category: true,

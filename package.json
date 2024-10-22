@@ -9,6 +9,7 @@
     "start": "next start -p $PORT",
     "lint": "next lint",
     "seed": "node --loader ts-node/esm prisma/seed.mts",
+    "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name dev",
     "prisma:migrate:prod": "prisma migrate deploy --schema=./prisma/schema.prisma",
     "prisma:studio": "prisma studio --schema=./prisma/schema.prisma",
@@ -16,12 +17,11 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^5.21.0",
+    "@prisma/client": "^5.21.1",
     "@radix-ui/react-checkbox": "^1.1.2",
     "@radix-ui/react-select": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.0",
     "axios": "^1.7.7",
-    "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "chart.js": "^4.4.5",
     "class-variance-authority": "^0.7.0",
@@ -31,6 +31,7 @@
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.453.0",
     "next": "^14.2.15",
@@ -45,14 +46,13 @@
     "yup": "^1.4.0"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/chart.js": "^2.9.41",
     "@types/cors": "^2.8.17",
     "@types/js-cookie": "^3.0.6",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/jwt-decode": "^3.1.0",
-    "@types/node": "^22.7.5",
+    "@types/node": "^22.7.7",
     "@types/nodemailer": "^6.4.16",
     "@types/react": "^18.3.11",
     "@types/react-dom": "18.3.1",
@@ -60,11 +60,15 @@
     "autoprefixer": "^10.4.20",
     "glob": "^11.0.0",
     "postcss": "^8.4.47",
-    "prisma": "^5.21.0",
+    "prisma": "^5.21.1",
     "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.14",
     "tailwindcss-animate": "^1.0.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
+  },
+  "prisma": {
+    "seed": "node --loader ts-node/esm prisma/seed.mts"
   }
 }
+

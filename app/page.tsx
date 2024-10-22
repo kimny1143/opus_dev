@@ -1,9 +1,23 @@
 'use client'
-
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/providers/AuthProvider';
 import { Button } from '@/app/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle, DropdownMenu, DropdownMenuItem } from '@/app/components/ui/opus-components'
 
 export default function Home() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
+
+  if (!user) {
+    return null; // リダイレクト中は何も表示しない
+  }
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <h1 className="text-4xl font-bold">Welcome to OPUS</h1>
