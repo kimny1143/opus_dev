@@ -45,3 +45,7 @@ db-data
 
 # docker
 docker-compose.yml
+
+# migrations
+/prisma/migrations/*
+
