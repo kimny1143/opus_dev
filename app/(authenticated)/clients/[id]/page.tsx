@@ -4,32 +4,7 @@ import React, { useEffect, useState } from 'react';
 import axios from '@/lib/axios';
 import Link from 'next/link';
 import { Button } from '@/app/components/ui/Button';
-
-interface Client {
-  id: number;
-  companyName: string;
-  address: string;
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-  registrationNumber: string;
-  createdAt: string;
-  updatedAt: string;
-  category?: {
-    name: string;
-  };
-  tags: {
-    tag: {
-      name: string;
-    };
-  }[];
-}
-
-interface ClientPageProps {
-  params: {
-    id: string;
-  };
-}
+import { Client, ClientPageProps } from '@/lib/types';
 
 const ClientPage: React.FC<ClientPageProps> = ({ params }) => {
   const { id } = params;
@@ -66,7 +41,7 @@ const ClientPage: React.FC<ClientPageProps> = ({ params }) => {
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">取引先詳細</h1>
       <div className="mb-4">
-      <p><strong>会社名:</strong> {client.companyName === 'none' ? '個人' : client.companyName}</p>
+      <p><strong>会社名/屋号:</strong> {client.companyName}</p>
         <p><strong>所在地:</strong> {client.address}</p>
         <p><strong>担当者名:</strong> {client.contactName}</p>
         <p><strong>メールアドレス:</strong> {client.contactEmail}</p>

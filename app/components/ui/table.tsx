@@ -1,8 +1,5 @@
 import React from 'react';
-
-interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
-  children: React.ReactNode;
-}
+import { TableProps } from '@/lib/types';
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ({ className, ...props }, ref) => (

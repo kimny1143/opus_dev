@@ -1,11 +1,5 @@
 import React from 'react';
-import { Tag } from '@prisma/client';
-
-interface TagChipProps {
-  tag: Tag;
-  isSelected: boolean;
-  onToggle: (tagId: number) => void;
-}
+import { TagChipProps } from '@/lib/types';
 
 const TagChip: React.FC<TagChipProps> = ({ tag, isSelected, onToggle }) => {
   return (

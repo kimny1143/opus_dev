@@ -1,5 +1,6 @@
 // 共通のバリデーションロジック
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 // 文字列が空でないかチェック
 export const isNotEmpty = (value: string): boolean => {
@@ -21,6 +22,11 @@ export const isValidEmail = (email: string): boolean => {
 // 数値チェック（小数点も許可）
 export const isNumber = (value: string): boolean => {
   return /^-?\d*\.?\d+$/.test(value);
+};
+
+// 数値が正の数かチェック
+export const isPositiveNumber = (value: number): boolean => {
+  return value > 0;
 };
 
 // 日付形式チェック (YYYY-MM-DD) と有効な日付かどうか
@@ -45,6 +51,22 @@ export const isStrongPassword = (password: string): boolean => {
   return strongPasswordRegex.test(password);
 };
 
+// 登録番号の形式チェック
+export const isValidRegistrationNumber = (value: string): boolean => {
+  return /^T\d{13}$/.test(value);
+};
+
+// 発注書番号の一意性チェック（バックエンドと連携が必要）
+export const isUniqueOrderNumber = async (orderNumber: string): Promise<boolean> => {
+  try {
+    const response = await axios.get(`/api/orders/check-unique?orderNumber=${orderNumber}`);
+    return response.data.isUnique;
+  } catch (error) {
+    console.error('発注書番号の一意性チェックに失敗しました:', error);
+    return false;
+  }
+};
+
 // カスタムバリデーションフック
 export const useValidation = (initialValue: string, validationFn: (value: string) => boolean) => {
   const [value, setValue] = useState(initialValue);
@@ -55,9 +77,4 @@ export const useValidation = (initialValue: string, validationFn: (value: string
   }, [value, validationFn]);
 
   return { value, setValue, isValid };
-};
-
-// 登録番号の形式チェック
-export const isValidRegistrationNumber = (value: string): boolean => {
-  return /^T\d{13}$/.test(value);
 };

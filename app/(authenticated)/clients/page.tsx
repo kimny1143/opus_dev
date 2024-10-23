@@ -15,29 +15,7 @@ import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import useAuthRedirect from '@/app/hooks/useAuthRedirect';
 import { getCookie } from 'cookies-next';
-
-interface Client {
-  id: number;
-  companyName: string;
-  address: string;
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-  hasInvoiceRegistration: boolean;
-  registrationNumber?: string;
-  createdAt: string;
-  updatedAt: string;
-  category?: {
-    id: number;
-    name: string;
-  };
-  tags: {
-    tag: {
-      id: number;
-      name: string;
-    };
-  }[];
-}
+import { Client } from '@/lib/types';
 
 const ClientsPage: React.FC = () => {
   useAuthRedirect();
@@ -150,7 +128,7 @@ const ClientsPage: React.FC = () => {
     }
   };
 
-  const headers = ['会社名', '担当者名', 'カテゴリ', 'タグ', '操作'];
+  const headers = ['会社名/屋号', '担当者名', 'カテゴリ', 'タグ', '操作'];
 
   if (error) {
     return <ErrorMessage message={error} />;

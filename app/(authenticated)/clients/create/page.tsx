@@ -38,7 +38,6 @@ const CreateClientPage: React.FC = () => {
 
   const handleSubmit = async (formData: CustomFormData) => {
     try {
-      console.log('送信するデータ:', formData); // デバッグ用
       await axios.post('/api/clients', formData);
       router.push('/clients');
     } catch (err) {

@@ -11,25 +11,32 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   try {
     await verifyToken(token);
-    const { id } = params;
-    const clientId = Number(id);
+    const data = await req.json();
+    const { categoryId, contactName } = data;
 
-    if (isNaN(clientId)) {
-      return NextResponse.json({ error: '有効な数値IDを提供してください。' }, { status: 400 });
+    // バリデーション：カテゴリが個人以外の場合、contactName は必須
+    if (categoryId !== 1 && !contactName) {
+      return NextResponse.json({ error: '担当者名は必須です。' }, { status: 400 });
     }
 
-    const data = await req.json();
+
+
     console.log('受信したデータ:', data); // デバッグ用
     // 必要に応じてバリデーション
+    // バリデーション：companyName を常に必須とする
+    if (!data.companyName) {
+      return NextResponse.json({ error: '会社名/氏名は必須です。' }, { status: 400 });
+    }
+    // バリデーション：登録番号が必要な場合は必須とする
     if (data.hasInvoiceRegistration && !data.registrationNumber) {
       return NextResponse.json({ error: '登録番号は必須です。' }, { status: 400 });
     }
 
     // 既存のタグをクリアし、新しいタグを設定
     const updatedClient = await prisma.client.update({
-      where: { id: clientId },
+      where: { id: Number(params.id) },
       data: {
-        companyName: data.categoryId === 1 ? 'none' : data.companyName,
+        companyName: data.companyName,
         address: data.address,
         contactName: data.contactName,
         contactEmail: data.contactEmail,

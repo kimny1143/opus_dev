@@ -42,3 +42,6 @@ next-env.d.ts
 .next
 out
 db-data
+
+# docker
+docker-compose.yml
