@@ -45,6 +45,7 @@ db-data
 
 # docker
 docker-compose.yml
+docker-entrypoint.sh
 
 # migrations
 /prisma/migrations/*
