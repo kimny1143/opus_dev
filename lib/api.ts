@@ -5,24 +5,9 @@ import { OrderFormData, InvoiceFormData } from '@/lib/types';
 
 // Axiosインスタンスの作成
 const instance = axios.create({
-  baseURL: '/', // Next.js内からのリクエストの場合、baseURLは不要
+  baseURL: '/api',
   withCredentials: true, // クッキーを含める
 });
-
-// リクエストインターセプター
-instance.interceptors.request.use(
-  (config) => {
-    // トークンはhttpOnlyクッキーに保存されているため、クライアント側で直接設定する必要はありません。
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// レスポンスインターセプター
-instance.interceptors.response.use(
-  (response) => response,
-  (error) => Promise.reject(error)
-);
 
 export default instance;
 
@@ -162,19 +147,3 @@ export const deleteInvoice = async (id: number) => {
     throw error;
   }
 };
-
-// 既存の axios インスタンスとは別に、Authorization ヘッダーを使用する場合
-export const api = axios.create({
-  baseURL: '/api',
-});
-
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
