@@ -14,6 +14,8 @@ const InvoiceDetailPage: React.FC = () => {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [sending, setSending] = useState<boolean>(false);
+  const [sendError, setSendError] = useState<string>('');
 
   useEffect(() => {
     if (invoiceId !== null) {
@@ -76,14 +78,26 @@ const InvoiceDetailPage: React.FC = () => {
 
   const handleSendEmail = async () => {
     if (!invoice) return;
+    setSending(true);
+    setSendError('');
 
     try {
       await axios.post(`/api/invoices/${invoice.id}/send-email`);
-      alert('請求書がメールで送信されました！');
+      alert('請求書が正常にメール送信されました！');
     } catch (err: any) {
       console.error('メール送信エラー:', err);
-      alert(err.response?.data?.error || '請求書のメール送信に失敗しました。');
+      const errorMessage = err.response?.data?.error?.message || 
+                          err.message || 
+                          '請求書のメール送信に失敗しました。';
+      setSendError(errorMessage);
+    } finally {
+      setSending(false);
     }
+  };
+
+  const handleRetry = () => {
+    setSendError('');
+    handleSendEmail();
   };
 
   if (loading) {
@@ -138,6 +152,17 @@ const InvoiceDetailPage: React.FC = () => {
           <p><strong>総額:</strong> {invoice.totalAmount} 円</p>
         </div>
       </div>
+      {sendError && (
+        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          <p>{sendError}</p>
+          <button
+            onClick={handleRetry}
+            className="mt-2 bg-red-500 text-white px-4 py-1 rounded text-sm"
+          >
+            再試行
+          </button>
+        </div>
+      )}
       <div className="flex space-x-4">
         <button
           onClick={handleExportPDF}
@@ -147,9 +172,10 @@ const InvoiceDetailPage: React.FC = () => {
         </button>
         <button
           onClick={handleSendEmail}
-          className="bg-green-500 text-white px-4 py-2 rounded"
+          disabled={sending}
+          className={`${sending ? 'bg-gray-400' : 'bg-green-500'} text-white px-4 py-2 rounded`}
         >
-          メール送信
+          {sending ? '送信中...' : 'メール送信'}
         </button>
         <button
           onClick={() => router.push(`/invoices/${invoice.id}/edit`)}

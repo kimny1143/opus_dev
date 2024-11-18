@@ -24,19 +24,44 @@ export const isNumber = (value: string): boolean => {
   return /^-?\d*\.?\d+$/.test(value);
 };
 
-// 数値が正の数かチェック
+// 数値が正の数かをチェック
 export const isPositiveNumber = (value: number): boolean => {
-  return value > 0;
+  return Number.isFinite(value) && value > 0;
 };
 
-// 日付形式チェック (YYYY-MM-DD) と有効な日付かどうか
+// 日付が有効かどうかをチェック
 export const isValidDate = (dateString: string): boolean => {
-  const regex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!regex.test(dateString)) return false;
-  
+  // 正規表現で YYYY-MM-DD の形式をチェック
+  const regEx = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regEx.test(dateString)) return false;
+
+  // 日付が実在するかをチェック
+  const date = new Date(dateString);
+  const timestamp = date.getTime();
+  if (isNaN(timestamp)) return false;
+
+  // 月と日が正しいかを確認（例: 2023-02-30 などを弾く）
   const [year, month, day] = dateString.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  const validDate = new Date(year, month - 1, day);
+  return (
+    validDate.getFullYear() === year &&
+    validDate.getMonth() === month - 1 &&
+    validDate.getDate() === day
+  );
+};
+
+// 発行日が現在の日付以前かをチェック
+export const isIssueDateValid = (issueDate: string): boolean => {
+  const issue = new Date(issueDate);
+  const today = new Date();
+  return issue <= today;
+};
+
+// 支払期日が発行日より後かをチェック
+export const isDueDateValid = (issueDate: string, dueDate: string): boolean => {
+  const issue = new Date(issueDate);
+  const due = new Date(dueDate);
+  return due > issue;
 };
 
 // 電話番号形式チェック（日本の場合、より厳密なバリデーション）
@@ -77,4 +102,27 @@ export const useValidation = (initialValue: string, validationFn: (value: string
   }, [value, validationFn]);
 
   return { value, setValue, isValid };
+};
+
+// 請求書アイテムのバリデーション
+export const validateInvoiceItems = (items: any[]): boolean => {
+  return items.every(item => {
+    return (
+      item.description && 
+      item.description.trim() !== '' &&
+      isPositiveNumber(item.quantity) &&
+      isPositiveNumber(item.unitPrice)
+    );
+  });
+};
+
+// 請求書の必須フィールドチェック
+export const validateInvoiceRequiredFields = (
+  orderId: string,
+  issueDate: string,
+  dueDate: string,
+  status: string,
+  items: any[]
+): boolean => {
+  return !!(orderId && issueDate && dueDate && status && items);
 };

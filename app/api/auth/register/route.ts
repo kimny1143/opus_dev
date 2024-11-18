@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hash } from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { generateTokens, setTokens } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   const { name, email, password } = await req.json();
@@ -21,18 +21,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+    // アクセストークンとリフレッシュトークンを生成
+    const { accessToken, refreshToken } = generateTokens({
+      userId: user.id,
+      email: user.email
+    });
 
     const userData = { id: user.id, name: user.name, email: user.email };
     
     const response = NextResponse.json({ message: '登録成功', user: userData });
-    response.cookies.set('auth_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60, // 1時間
-      path: '/',
-      sameSite: 'lax',
-    });
+    
+    // トークンをクッキーに設定
+    setTokens(response, accessToken, refreshToken);
 
     return response;
   } catch (error) {

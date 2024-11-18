@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import nodemailer from 'nodemailer';
-import jwt from 'jsonwebtoken';
+import { generateTokens } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,20 +18,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ユーザーが存在しません。' }, { status: 404 });
     }
 
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET as string,
-      { expiresIn: '1h' }
-    );
+    // アクセストークンとリフレッシュトークンを生成
+    const { accessToken, refreshToken } = generateTokens({
+      userId: user.id,
+      email: user.email
+    });
 
     const resetToken = {
-      token,
+      token: accessToken,
       userId: user.id,
       createdAt: new Date(),
-      expires: new Date(Date.now() + 3600000), // 1時間後に期限切れ
+      expires: new Date(Date.now() + 3600000), // アクセストークンの有効期限: 1時間
     };
 
-    // トークンを保存するモデルが必要（Prismaスキーマに追加すること）
+    // トークンを保存
     await prisma.resetToken.create({
       data: resetToken,
     });
@@ -45,17 +45,38 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const resetUrl = `http://localhost:3000/auth/reset-password/${token}`;
+    const resetUrl = `http://localhost:3000/auth/reset-password/${accessToken}`;
+
+    const response = NextResponse.json(
+      { message: 'パスワードリセットメールを送信しました。' },
+      { status: 200 }
+    );
+
+    // トークンをHTTPOnlyクッキーとして設定
+    response.cookies.set('reset_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 3600 // 1時間
+    });
+
+    response.cookies.set('reset_refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 3600 // 7日間
+    });
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject: 'パスワードリセット',
       html: `<p>パスワードをリセットするには、以下のリンクをクリックしてください：</p>
-             <a href="${resetUrl}">${resetUrl}</a>`,
+             <a href="${resetUrl}">${resetUrl}</a>
+             <p>このリンクは1時間後に期限切れとなります。</p>`,
     });
 
-    return NextResponse.json({ message: 'パスワードリセットメールを送信しました。' }, { status: 200 });
+    return response;
   } catch (error) {
     console.error('パスワードリセットエラー:', error);
     return NextResponse.json({ message: 'サーバーエラー' }, { status: 500 });

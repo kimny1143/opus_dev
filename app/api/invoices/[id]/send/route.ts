@@ -4,7 +4,10 @@ import prisma from '@/lib/prisma';
 import { verifyToken, getToken } from '@/lib/auth';
 import PDFDocument from 'pdfkit';
 import nodemailer from 'nodemailer';
-import { Readable } from 'stream';
+import { Resend } from 'resend';
+
+// 税率の定義
+const TAX_RATE = 0.10; // 10%
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const token = getToken(req);
@@ -72,75 +75,97 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // PDFコンテンツの作成
     doc.fontSize(20).text('請求書', { align: 'center' });
-
     doc.moveDown();
-    doc.fontSize(12).text(`請求書番号: ${invoice.invoiceNumber}`);
-    doc.text(`発行日: ${new Date(invoice.issueDate).toLocaleDateString()}`);
-    doc.text(`支払期日: ${new Date(invoice.dueDate).toLocaleDateString()}`);
-    doc.text(`ステータス: ${invoice.status === 'unpaid' ? '未払い' : invoice.status === 'paid' ? '支払い済み' : '延滞'}`);
 
-    doc.moveDown();
-    doc.fontSize(14).text('クライアント情報', { underline: true });
-    doc.fontSize(12).text(`会社名: ${invoice.order.client.companyName}`);
-    doc.text(`登録番号: ${invoice.order.client.registrationNumber}`);
+    // 基本情報
+    doc.fontSize(12);
+    doc.text(`請求書番号: ${invoice.invoiceNumber}`);
+    doc.text(`取引年月日: ${new Date(invoice.issueDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}`);
+    doc.text(`支払期限: ${new Date(invoice.dueDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}`);
+    doc.text(`取引区分: 課税取引`);
 
+    // 発行者情報
     doc.moveDown();
-    doc.fontSize(14).text('請求書アイテム', { underline: true });
+    doc.fontSize(14).text('発行者情報', { underline: true });
+    doc.fontSize(12);
+    if (invoice.issuerClient) {
+      doc.text(`事業者名: ${invoice.issuerClient.companyName}`);
+      doc.text(`適格請求書発行事業者登録番号: ${invoice.issuerClient.registrationNumber}`);
+      doc.text(`本店所在地: ${invoice.issuerClient.address}`);
+      doc.text(`担当者: ${invoice.issuerClient.contactName}`);
+      doc.text(`電話番号: ${invoice.issuerClient.contactPhone}`);
+      doc.text(`メールアドレス: ${invoice.issuerClient.contactEmail}`);
+    }
+
+    // 受領者情報
+    doc.moveDown();
+    doc.fontSize(14).text('受領者情報', { underline: true });
+    doc.fontSize(12);
+    if (invoice.recipientClient) {
+      doc.text(`会社名: ${invoice.recipientClient.companyName}`);
+      doc.text(`登録番号: ${invoice.recipientClient.registrationNumber}`);
+      doc.text(`住所: ${invoice.recipientClient.address}`);
+      doc.text(`担当者: ${invoice.recipientClient.contactName}`);
+      doc.text(`電話番号: ${invoice.recipientClient.contactPhone}`);
+      doc.text(`メールアドレス: ${invoice.recipientClient.contactEmail}`);
+    }
+
+    // 取引内容明細
+    doc.moveDown();
+    doc.fontSize(14).text('取引内容明細', { underline: true });
 
     // テーブルヘッダー
     doc.fontSize(12);
-    doc.text('説明', 50, doc.y, { continued: true });
+    doc.text('品名・サービス', 50, doc.y, { continued: true });
     doc.text('数量', 250, doc.y, { continued: true });
     doc.text('単価', 350, doc.y, { continued: true });
-    doc.text('合計', 450, doc.y);
+    doc.text('金額', 450, doc.y);
     doc.moveDown();
 
     // テーブル内容
+    let subtotal = 0;
     invoice.items.forEach((item) => {
+      const totalPrice = item.quantity * item.unitPrice;
+      subtotal += totalPrice;
       doc.text(item.description, 50, doc.y, { continued: true });
       doc.text(item.quantity.toString(), 250, doc.y, { continued: true });
       doc.text(`¥${item.unitPrice.toLocaleString()}`, 350, doc.y, { continued: true });
-      const totalPrice = item.quantity * item.unitPrice;
       doc.text(`¥${totalPrice.toLocaleString()}`, 450, doc.y);
     });
 
+    // 合計金額情報
     doc.moveDown();
-    doc.fontSize(12).text(`総額: ¥${invoice.totalAmount.toLocaleString()}`, { align: 'right' });
+    const taxAmount = subtotal * TAX_RATE;
+    const totalAmount = subtotal + taxAmount;
+
+    doc.fontSize(12).text(`小計: ¥${subtotal.toLocaleString()}`, { align: 'right' });
+    doc.text(`消費税（${TAX_RATE * 100}%）: ¥${taxAmount.toLocaleString()}`, { align: 'right' });
+    doc.text(`合計金額（税込）: ¥${totalAmount.toLocaleString()}`, { align: 'right' });
+
+    // 支払い条件
+    doc.moveDown();
+    doc.fontSize(12).text('支払い条件', { underline: true });
+    doc.text('お支払いは請求書に記載された期日までにお願いいたします。');
 
     // ドキュメントの終了
     doc.end();
 
-    // バッファを結合
-    const pdfBuffer = Buffer.concat(buffers);
+    // Resendの設定
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
-    // Nodemailer トランスポーターの設定
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST, // 例: 'smtp.gmail.com'
-      port: Number(process.env.EMAIL_PORT), // 例: 587
-      secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
-      auth: {
-        user: process.env.EMAIL_USER, // メールアカウント
-        pass: process.env.EMAIL_PASS, // メールパスワード
-      },
-    });
-
-    // メールオプションの設定
-    const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`, // 送信者情報
-      to: clientEmail, // 受信者
+    // メールの送信
+    await resend.emails.send({
+      from: `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM_ADDRESS}>`,
+      to: [clientEmail],
       subject: `請求書 ${invoice.invoiceNumber} の送信`,
-      text: `拝啓、\n\n請求書 ${invoice.invoiceNumber} を添付しておりますので、ご確認ください。\n\nよろしくお願いいたします。\n`,
+      text: `拝啓\n\n請求書 ${invoice.invoiceNumber} を添付いたしましたので、ご確認ください。\n\nよろしくお願いいたします。\n`,
       attachments: [
         {
           filename: `invoice_${invoice.invoiceNumber}.pdf`,
-          content: pdfBuffer,
-          contentType: 'application/pdf',
-        },
-      ],
-    };
-
-    // メールの送信
-    await transporter.sendMail(mailOptions);
+          content: Buffer.concat(buffers)
+        }
+      ]
+    });
 
     return NextResponse.json({ message: '請求書がメールで送信されました。' }, { status: 200 });
   } catch (error) {

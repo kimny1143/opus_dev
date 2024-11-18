@@ -5,7 +5,7 @@ datasource db {
 
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"] // 追加
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
 }
 
 model User {
@@ -26,12 +26,17 @@ model User {
 
   issuedInvoices   Invoice[] @relation("InvoiceIssuerUser")
   receivedInvoices Invoice[] @relation("InvoiceRecipientUser")
+
+  @@index([email])
+  @@index([status])
 }
 
 model Category {
   id      Int      @id @default(autoincrement())
   name    String   @unique
   clients Client[]
+
+  @@index([name])
 }
 
 model Client {
@@ -40,25 +45,32 @@ model Client {
   address                String
   contactName            String
   contactEmail           String
-  contactPhone           String
-  hasInvoiceRegistration Boolean         @default(false) // この行が存在するか確認
+  contactPhone          String
+  hasInvoiceRegistration Boolean         @default(false)
   registrationNumber     String?         @unique
   categoryId             Int?
   category               Category?       @relation(fields: [categoryId], references: [id])
   tags                   TagsOnClients[]
   orders                 Order[]
-  status                 String? // Nullable   
+  status                 String?
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
 
   issuedInvoices   Invoice[] @relation("InvoiceIssuerClient")
   receivedInvoices Invoice[] @relation("InvoiceRecipientClient")
+
+  @@index([companyName])
+  @@index([contactEmail])
+  @@index([status])
+  @@index([categoryId])
 }
 
 model Tag {
   id      Int             @id @default(autoincrement())
   name    String          @unique
   clients TagsOnClients[]
+
+  @@index([name])
 }
 
 model TagsOnClients {
@@ -68,6 +80,8 @@ model TagsOnClients {
   tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Restrict)
 
   @@id([clientId, tagId])
+  @@index([clientId])
+  @@index([tagId])
 }
 
 model ResetToken {
@@ -77,6 +91,10 @@ model ResetToken {
   expires   DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([token])
+  @@index([userId])
+  @@index([expires])
 }
 
 model Order {
@@ -93,6 +111,12 @@ model Order {
   client      Client      @relation(fields: [clientId], references: [id])
 
   invoices Invoice[] @relation("OrderInvoice")
+
+  @@index([orderNumber])
+  @@index([clientId])
+  @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
 }
 
 model Invoice {
@@ -105,20 +129,27 @@ model Invoice {
   totalAmount   Float
   items         InvoiceItem[]
 
-  // 発行者情報（UserまたはClient）
   issuerUserId   Int?
   issuerClientId Int?
   issuerUser     User?   @relation("InvoiceIssuerUser", fields: [issuerUserId], references: [id])
   issuerClient   Client? @relation("InvoiceIssuerClient", fields: [issuerClientId], references: [id])
 
-  // 受領者情報（UserまたはClient）
   recipientUserId   Int?
   recipientClientId Int?
   recipientUser     User?   @relation("InvoiceRecipientUser", fields: [recipientUserId], references: [id])
   recipientClient   Client? @relation("InvoiceRecipientClient", fields: [recipientClientId], references: [id])
 
-  // Orderとのリレーション（オプション）
   order Order? @relation("OrderInvoice", fields: [orderId], references: [id])
+
+  @@index([invoiceNumber])
+  @@index([orderId])
+  @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
+  @@index([issuerUserId])
+  @@index([issuerClientId])
+  @@index([recipientUserId])
+  @@index([recipientClientId])
 }
 
 model OrderItem {
@@ -129,6 +160,8 @@ model OrderItem {
   unitPrice   Float
   totalPrice  Float
   order       Order  @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
 }
 
 model InvoiceItem {
@@ -139,4 +172,6 @@ model InvoiceItem {
   unitPrice   Float
   totalPrice  Float
   invoice     Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
 }

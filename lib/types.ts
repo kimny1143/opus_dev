@@ -101,6 +101,7 @@ export interface Invoice {
 
 // InvoiceFormData
 export interface InvoiceFormData {
+  invoiceNumber: string;
   orderId: number;
   issueDate: string;
   dueDate: string;

@@ -2,15 +2,25 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@components/*": ["./app/components/*"],
-      "@ui/*": ["./app/components/ui/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@components/*": [
+        "./app/components/*"
+      ],
+      "@ui/*": [
+        "./app/components/ui/*"
+      ]
     },
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "jsx": "preserve",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -20,13 +30,24 @@
     "module": "esnext",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "target": "ES2020",
+    "target": "ES6",
     "plugins": [
       {
         "name": "next"
       }
+    ],
+    "types": [
+      "jest",
+      "@testing-library/jest-dom"
     ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

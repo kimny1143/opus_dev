@@ -1,17 +1,18 @@
 'use client';
 
-import api from '@/lib/api'; // 認証設定済みの axios インスタンスを使用
+import api from '@/lib/api';
 import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import OrderItemInput from '@/app/(authenticated)/components/OrderItemInput';
 import { Client, OrderFormData } from '@/lib/types';
+import { isValidDate, isIssueDateValid, isDueDateValid, isPositiveNumber } from '@/lib/validation';
 
 const CreateOrderPage: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
-  const { register, control, handleSubmit, formState: { errors } } = useForm<OrderFormData>({
+  const { register, control, handleSubmit, watch, formState: { errors } } = useForm<OrderFormData>({
     defaultValues: {
-        clientId: 0,
+      clientId: 0,
       items: [{ description: '', quantity: 1, unitPrice: 0 }],
     },
   });
@@ -21,16 +22,21 @@ const CreateOrderPage: React.FC = () => {
   });
   const router = useRouter();
 
+  // フォームの値を監視
+  const issueDate = watch('issueDate');
+  const dueDate = watch('dueDate');
+  const items = watch('items');
+
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const response = await api.get('/api/clients'); // エンドポイントを修正
+        const response = await api.get('/api/clients');
         console.log('取得したクライアントデータ:', response.data);
-        setClients(response.data); // 配列のまま
+        setClients(response.data);
       } catch (error: any) {
         if (error.response?.status === 401) {
           console.error('認証エラー: ログインページにリダイレクトします。');
-          router.push('/login'); // ログインページへのリダイレクト
+          router.push('/login');
         } else {
           console.error('クライアントデータの取得に失敗しました。', error);
         }
@@ -40,33 +46,72 @@ const CreateOrderPage: React.FC = () => {
     fetchClients();
   }, []);
 
-const onSubmit = async (data: OrderFormData) => {
-    try {
-        // clientId と unitPrice を数値に変換
-        const payload = {
-            ...data,
-            clientId: Number(data.clientId),
-            items: data.items.map(item => ({
-                ...item,
-                quantity: Number(item.quantity),
-                unitPrice: Number(item.unitPrice),
-            })),
-        };
+  const validateForm = (data: OrderFormData): boolean => {
+    const errors: { [key: string]: string } = {};
 
-        await api.post('/api/orders', payload);
-        alert('発注書が作成されました！');
-        router.push('/orders');
-    } catch (error: any) {
-        alert(error.response?.data?.error || '発注書の作成に失敗しました。');
-        console.error('注文作成エラー:', error);
+    // 発行日のバリデーション
+    if (!isValidDate(data.issueDate)) {
+      errors.issueDate = '有効な発行日を入力してください。';
+    } else if (!isIssueDateValid(data.issueDate)) {
+      errors.issueDate = '発行日は現在の日付以前である必要があります。';
     }
-};
+
+    // 支払期限のバリデーション
+    if (!isValidDate(data.dueDate)) {
+      errors.dueDate = '有効な支払期限を入力してください。';
+    } else if (!isDueDateValid(data.issueDate, data.dueDate)) {
+      errors.dueDate = '支払期限は発行日より後である必要があります。';
+    }
+
+    // アイテムのバリデーション
+    if (!Array.isArray(data.items) || data.items.length === 0) {
+      errors.items = '少なくとも1つのアイテムが必要です。';
+    } else {
+      data.items.forEach((item, index) => {
+        if (!item.description) {
+          errors[`items.${index}.description`] = '説明は必須です。';
+        }
+        if (!isPositiveNumber(Number(item.quantity))) {
+          errors[`items.${index}.quantity`] = '数量は正の数である必要があります。';
+        }
+        if (!isPositiveNumber(Number(item.unitPrice))) {
+          errors[`items.${index}.unitPrice`] = '単価は正の数である必要があります。';
+        }
+      });
+    }
+
+    return Object.keys(errors).length === 0;
+  };
+
+  const onSubmit = async (data: OrderFormData) => {
+    if (!validateForm(data)) {
+      return;
+    }
+
+    try {
+      const payload = {
+        ...data,
+        clientId: Number(data.clientId),
+        items: data.items.map(item => ({
+          ...item,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+        })),
+      };
+
+      await api.post('/api/orders', payload);
+      alert('発注書が作成されました！');
+      router.push('/orders');
+    } catch (error: any) {
+      alert(error.response?.data?.error || '発注書の作成に失敗しました。');
+      console.error('注文作成エラー:', error);
+    }
+  };
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">新規発注書作成</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* フォームフィールド */}
         <div>
           <label className="block text-sm font-medium text-gray-700">発注書番号</label>
           <input
@@ -92,7 +137,6 @@ const onSubmit = async (data: OrderFormData) => {
           {errors.clientId && <span className="text-red-500 text-sm">{errors.clientId.message}</span>}
         </div>
 
-        {/* 発行日と支払期限 */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">発行日</label>
@@ -115,7 +159,6 @@ const onSubmit = async (data: OrderFormData) => {
           </div>
         </div>
 
-        {/* ステータス */}
         <div>
           <label className="block text-sm font-medium text-gray-700">ステータス</label>
           <select
@@ -130,7 +173,6 @@ const onSubmit = async (data: OrderFormData) => {
           {errors.status && <span className="text-red-500 text-sm">{errors.status.message}</span>}
         </div>
 
-        {/* 発注アイテム */}
         <div>
           <h2 className="text-lg font-semibold mb-2">発注アイテム</h2>
           {fields.map((field, index) => (
@@ -152,7 +194,6 @@ const onSubmit = async (data: OrderFormData) => {
           </button>
         </div>
 
-        {/* 作成ボタン */}
         <div>
           <button
             type="submit"
