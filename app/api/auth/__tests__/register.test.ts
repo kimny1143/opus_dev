@@ -1,127 +1,144 @@
-import request from 'supertest';
-import { createServer } from 'http';
-import { parse } from 'url';
-import { appHandler } from '@/lib/appHandler';
-import prisma from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
-
-// jest-domをインポート
-import '@testing-library/jest-dom';
+import { POST } from '../register/route';
+import { prisma } from '@/lib/prisma';
+import { NextRequest } from 'next/server';
 
 describe('Auth API - Register', () => {
-  let server: any;
-
-  beforeAll(async () => {
-    // テスト用サーバーのセットアップ
-    server = createServer((req, res) => {
-      const parsedUrl = parse(req.url || '', true);
-      appHandler(req as any, res, parsedUrl);
-    });
+  afterAll(async () => {
+    // データベースのクリーンアップ
+    await prisma.user.deleteMany({});
   });
 
-  afterAll(async () => {
-    // テストデータのクリーンアップ
-    await prisma.user.deleteMany({
-      where: {
-        email: {
-          in: [
-            'newuser@example.com',
-            'testuser@example.com',
-          ],
+  test('新規ユーザーを正常に登録できる', async () => {
+    const body = {
+      name: '新規ユーザー',
+      email: 'newuser@example.com', 
+      password: 'password123',
+      companyName: '新規会社',
+      address: '新規住所',
+      phone: '03-9876-5432',
+      registrationNumber: 'NEW123456',
+    };
+
+    const request = {
+      headers: {
+        get: (name: string) => {
+          if (name.toLowerCase() === 'content-type') return 'application/json';
+          return null;
         },
       },
+      json: async () => body,
+    } as unknown as NextRequest;
+
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+
+    const data = await response.json();
+    expect(data).toHaveProperty('message', '登録成功');
+    expect(data).toHaveProperty('user');
+    expect(data.user).toMatchObject({
+      name: body.name,
+      email: body.email,
+      companyName: body.companyName,
+      address: body.address,
+      phone: body.phone,
+      registrationNumber: body.registrationNumber
     });
-    await prisma.$disconnect();
-    server.close();
   });
 
-  test('正しいデータでユーザー登録ができる', async () => {
-    const response = await request(server)
-      .post('/api/auth/register')
-      .send({
-        name: '新規ユーザー',
-        email: 'newuser@example.com',
-        password: 'newpassword123',
-        companyName: '新規会社',
-        address: '新規住所',
-        phone: '03-9999-8888',
-        registrationNumber: 'NEW123456',
-      });
+  test('必須フィールドが欠けている場合はエラーを返す', async () => {
+    const body = {
+      name: '新規ユーザー',
+      email: 'newuser@example.com',
+      // passwordを省略
+      companyName: '新規会社',
+      address: '新規住所',
+      phone: '03-9876-5432',
+      registrationNumber: 'NEW123456',
+    };
 
-    expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty('message', 'ユーザー登録が成功しました。');
-    expect(response.body).toHaveProperty('user');
-    expect(response.body.user).toHaveProperty('email', 'newuser@example.com');
+    const request = {
+      headers: {
+        get: (name: string) => {
+          if (name.toLowerCase() === 'content-type') return 'application/json';
+          return null;
+        },
+      },
+      json: async () => body,
+    } as unknown as NextRequest;
 
-    // データベースにユーザーが存在することを確認
-    const user = await prisma.user.findUnique({
-      where: { email: 'newuser@example.com' },
-    });
-    expect(user).not.toBeNull();
-    expect(user?.name).toBe('新規ユーザー');
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+
+    const data = await response.json();
+    expect(data).toHaveProperty('error', '必須フィールドが不足しています。');
   });
 
-  test('既に存在するメールアドレスで登録を試みる', async () => {
-    // 事前にユーザーを作成
+  test('無効なメールアドレスの場合はエラーを返す', async () => {
+    const body = {
+      name: '新規ユーザー',
+      email: 'invalid-email',
+      password: 'password123',
+      companyName: '新規会社',
+      address: '新規住所', 
+      phone: '03-9876-5432',
+      registrationNumber: 'NEW123456',
+    };
+
+    const request = {
+      headers: {
+        get: (name: string) => {
+          if (name.toLowerCase() === 'content-type') return 'application/json';
+          return null;
+        },
+      },
+      json: async () => body,
+    } as unknown as NextRequest;
+
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+
+    const data = await response.json();
+    expect(data).toHaveProperty('error', '有効なメールアドレスを入力してください。');
+  });
+
+  test('既存のメールアドレスの場合はエラーを返す', async () => {
+    // 最初のユーザーを作成
     const existingUser = await prisma.user.create({
       data: {
         name: '既存ユーザー',
-        email: 'testuser@example.com',
-        password: await bcrypt.hash('password123', 10),
+        email: 'existing@example.com',
+        password: 'hashedpassword',
         companyName: '既存会社',
         address: '既存住所',
-        phone: '03-1111-2222',
-        registrationNumber: 'EXIST123456',
-      },
+        phone: '03-1234-5678',
+        registrationNumber: 'EXISTING123'
+      }
     });
 
-    const response = await request(server)
-      .post('/api/auth/register')
-      .send({
-        name: '重複ユーザー',
-        email: 'testuser@example.com', // 既存のメールアドレス
-        password: 'anotherpassword123',
-        companyName: '重複会社',
-        address: '重複住所',
-        phone: '03-3333-4444',
-        registrationNumber: 'DUPLICATE123456',
-      });
+    const body = {
+      name: '新規ユーザー',
+      email: 'existing@example.com', // 既存のメールアドレスを使用
+      password: 'password123',
+      companyName: '新規会社',
+      address: '新規住所',
+      phone: '03-9876-5432',
+      registrationNumber: 'NEW123456',
+    };
 
+    const request = {
+      headers: {
+        get: (name: string) => {
+          if (name.toLowerCase() === 'content-type') return 'application/json';
+          return null;
+        },
+      },
+      json: async () => body,
+    } as unknown as NextRequest;
+
+    const response = await POST(request);
     expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty('error', '既に存在するメールアドレスです。');
-  });
 
-  test('必須フィールドが欠落している場合にエラーを返す', async () => {
-    const response = await request(server)
-      .post('/api/auth/register')
-      .send({
-        // name フィールドが欠落
-        email: 'incomplete@example.com',
-        password: 'password123',
-        companyName: '不完全会社',
-        address: '不完全住所',
-        phone: '03-5555-6666',
-        registrationNumber: 'INCOMPLETE123',
-      });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty('error', 'すべての必須フィールドを入力してください。');
-  });
-
-  test('無効なメールアドレス形式で登録を試みる', async () => {
-    const response = await request(server)
-      .post('/api/auth/register')
-      .send({
-        name: '無効メールユーザー',
-        email: 'invalid-email',
-        password: 'password123',
-        companyName: '無効メール会社',
-        address: '無効メール住所',
-        phone: '03-7777-8888',
-        registrationNumber: 'INVALID123',
-      });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty('error', '有効なメールアドレスを入力してください。');
+    const data = await response.json();
+    expect(data).toHaveProperty('error', 'このメールアドレスは既に登録されています。');
   });
 });

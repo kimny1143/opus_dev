@@ -32,7 +32,12 @@ export const generateRefreshToken = (payload: TokenPayload) => {
   return jwt.sign(payload, refreshSecret, { expiresIn: REFRESH_TOKEN_EXPIRES_IN });
 };
 
-export const generateTokens = (payload: TokenPayload) => {
+export const generateTokens = (user: any) => {
+  const payload: TokenPayload = {
+    userId: user.id,
+    email: user.email,
+  };
+
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 

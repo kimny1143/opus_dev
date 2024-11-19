@@ -1,0 +1,287 @@
+
+> opus_dev@1.0.0 test
+> dotenv -e .env.test -- npx jest
+
+FAIL api app/api/auth/__tests__/register.test.ts
+  ● Console
+
+    console.error
+      ユーザー登録エラー: Cannot read properties of undefined (reading 'id')
+
+      63 |     return response;
+      64 |   } catch (error: any) {
+    > 65 |     console.error('ユーザー登録エラー:', error.message);
+         |             ^
+      66 |     console.error('エラーのスタックトレース:', error.stack);
+      67 |     console.error('エラーの詳細:', {
+      68 |       name: error.name,
+
+      at error (app/api/auth/register/route.ts:65:13)
+      at Object.<anonymous> (app/api/auth/__tests__/register.test.ts:32:22)
+
+    console.error
+      エラーのスタックトレース: TypeError: Cannot read properties of undefined (reading 'id')
+          at id (/Volumes/strage/opus_localdev/opus_dev/app/api/auth/register/route.ts:44:20)
+          at Object.<anonymous> (/Volumes/strage/opus_localdev/opus_dev/app/api/auth/__tests__/register.test.ts:32:22)
+
+      64 |   } catch (error: any) {
+      65 |     console.error('ユーザー登録エラー:', error.message);
+    > 66 |     console.error('エラーのスタックトレース:', error.stack);
+         |             ^
+      67 |     console.error('エラーの詳細:', {
+      68 |       name: error.name,
+      69 |       code: error.code,
+
+      at error (app/api/auth/register/route.ts:66:13)
+      at Object.<anonymous> (app/api/auth/__tests__/register.test.ts:32:22)
+
+    console.error
+      エラーの詳細: { name: 'TypeError', code: undefined, cause: undefined }
+
+      65 |     console.error('ユーザー登録エラー:', error.message);
+      66 |     console.error('エラーのスタックトレース:', error.stack);
+    > 67 |     console.error('エラーの詳細:', {
+         |             ^
+      68 |       name: error.name,
+      69 |       code: error.code,
+      70 |       cause: error.cause
+
+      at error (app/api/auth/register/route.ts:67:13)
+      at Object.<anonymous> (app/api/auth/__tests__/register.test.ts:32:22)
+
+    console.error
+      ユーザー登録エラー: Cannot read properties of undefined (reading 'id')
+
+      63 |     return response;
+      64 |   } catch (error: any) {
+    > 65 |     console.error('ユーザー登録エラー:', error.message);
+         |             ^
+      66 |     console.error('エラーのスタックトレース:', error.stack);
+      67 |     console.error('エラーの詳細:', {
+      68 |       name: error.name,
+
+      at error (app/api/auth/register/route.ts:65:13)
+      at Object.<anonymous> (app/api/auth/__tests__/register.test.ts:138:22)
+
+    console.error
+      エラーのスタックトレース: TypeError: Cannot read properties of undefined (reading 'id')
+          at id (/Volumes/strage/opus_localdev/opus_dev/app/api/auth/register/route.ts:44:20)
+          at Object.<anonymous> (/Volumes/strage/opus_localdev/opus_dev/app/api/auth/__tests__/register.test.ts:138:22)
+
+      64 |   } catch (error: any) {
+      65 |     console.error('ユーザー登録エラー:', error.message);
+    > 66 |     console.error('エラーのスタックトレース:', error.stack);
+         |             ^
+      67 |     console.error('エラーの詳細:', {
+      68 |       name: error.name,
+      69 |       code: error.code,
+
+      at error (app/api/auth/register/route.ts:66:13)
+      at Object.<anonymous> (app/api/auth/__tests__/register.test.ts:138:22)
+
+    console.error
+      エラーの詳細: { name: 'TypeError', code: undefined, cause: undefined }
+
+      65 |     console.error('ユーザー登録エラー:', error.message);
+      66 |     console.error('エラーのスタックトレース:', error.stack);
+    > 67 |     console.error('エラーの詳細:', {
+         |             ^
+      68 |       name: error.name,
+      69 |       code: error.code,
+      70 |       cause: error.cause
+
+      at error (app/api/auth/register/route.ts:67:13)
+      at Object.<anonymous> (app/api/auth/__tests__/register.test.ts:138:22)
+
+  ● Auth API - Register › 新規ユーザーを正常に登録できる
+
+    TypeError: Cannot read properties of undefined (reading 'status')
+
+      31 |
+      32 |     const response = await POST(request);
+    > 33 |     expect(response.status).toBe(200);
+         |                     ^
+      34 |
+      35 |     const data = await response.json();
+      36 |     expect(data).toHaveProperty('message', '登録成功');
+
+      at Object.status (app/api/auth/__tests__/register.test.ts:33:21)
+
+  ● Auth API - Register › 必須フィールドが欠けている場合はエラーを返す
+
+    TypeError: Cannot read properties of undefined (reading 'status')
+
+      68 |
+      69 |     const response = await POST(request);
+    > 70 |     expect(response.status).toBe(400);
+         |                     ^
+      71 |
+      72 |     const data = await response.json();
+      73 |     expect(data).toHaveProperty('error', '必須フィールドが不足しています。');
+
+      at Object.status (app/api/auth/__tests__/register.test.ts:70:21)
+
+  ● Auth API - Register › 無効なメールアドレスの場合はエラーを返す
+
+    TypeError: Cannot read properties of undefined (reading 'status')
+
+       96 |
+       97 |     const response = await POST(request);
+    >  98 |     expect(response.status).toBe(400);
+          |                     ^
+       99 |
+      100 |     const data = await response.json();
+      101 |     expect(data).toHaveProperty('error', '有効なメールアドレスを入力してください。');
+
+      at Object.status (app/api/auth/__tests__/register.test.ts:98:21)
+
+  ● Auth API - Register › 既存のメールアドレスの場合はエラーを返す
+
+    TypeError: Cannot read properties of undefined (reading 'status')
+
+      137 |
+      138 |     const response = await POST(request);
+    > 139 |     expect(response.status).toBe(400);
+          |                     ^
+      140 |
+      141 |     const data = await response.json();
+      142 |     expect(data).toHaveProperty('error', 'このメールアドレスは既に登録されています。');
+
+      at Object.status (app/api/auth/__tests__/register.test.ts:139:21)
+
+FAIL api app/api/auth/__tests__/login.test.ts
+  ● Auth API - Login › 正しい資格情報でログインできる
+
+    TypeError: Cannot read properties of undefined (reading 'status')
+
+      54 |
+      55 |     // ステータスコードの検証
+    > 56 |     expect(response.status).toBe(200);
+         |                     ^
+      57 |
+      58 |     // レスポンスボディの検証
+      59 |     const data = await response.json();
+
+      at Object.status (app/api/auth/__tests__/login.test.ts:56:21)
+
+FAIL api app/api/orders/__tests__/route.test.ts
+  ● Orders API › 正常な注文作成
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+      53 |     const body = {
+      54 |       orderNumber: 'ORD-TEST-001',
+    > 55 |       clientId: testClient.id,
+         |                            ^
+      56 |       issueDate: '2023-01-01',
+      57 |       dueDate: '2023-02-01',
+      58 |       status: 'pending',
+
+      at Object.id (app/api/orders/__tests__/route.test.ts:55:28)
+
+  ● Orders API › 発注番号が重複している場合にエラーを返す
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+      94 |       data: {
+      95 |         orderNumber: duplicateOrderNumber,
+    > 96 |         clientId: testClient.id,
+         |                              ^
+      97 |         issueDate: new Date('2023-01-01'),
+      98 |         dueDate: new Date('2023-02-01'),
+      99 |         status: 'pending',
+
+      at Object.id (app/api/orders/__tests__/route.test.ts:96:30)
+
+  ● Orders API › 無効な日付形式の場合にエラーを返す
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+      151 |     const body = {
+      152 |       orderNumber: 'ORD-TEST-003',
+    > 153 |       clientId: testClient.id,
+          |                            ^
+      154 |       issueDate: 'invalid-date',
+      155 |       dueDate: '2023-02-01',
+      156 |       status: 'pending',
+
+      at Object.id (app/api/orders/__tests__/route.test.ts:153:28)
+
+  ● Orders API › 必須項目が欠落している場合にエラーを返す
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+      188 |     const body = {
+      189 |       // orderNumber を欠落
+    > 190 |       clientId: testClient.id,
+          |                            ^
+      191 |       issueDate: '2023-01-01',
+      192 |       dueDate: '2023-02-01',
+      193 |       status: 'pending',
+
+      at Object.id (app/api/orders/__tests__/route.test.ts:190:28)
+
+FAIL api app/api/invoices/__tests__/route.test.ts
+  ● Invoices API › 正常な請求書作成
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+      71 |   test('正常な請求書作成', async () => {
+      72 |     const body = {
+    > 73 |       orderId: testOrder.id,
+         |                          ^
+      74 |       issueDate: '2023-01-01',
+      75 |       dueDate: '2023-02-01',
+      76 |       status: 'unpaid',
+
+      at Object.id (app/api/invoices/__tests__/route.test.ts:73:26)
+
+  ● Invoices API › 重複する請求書番号の場合、エラーが返される
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+      113 |       data: {
+      114 |         invoiceNumber: generatedInvoiceNumber,
+    > 115 |         orderId: testOrder.id,
+          |                            ^
+      116 |         issueDate: new Date('2023-01-01'),
+      117 |         dueDate: new Date('2023-02-01'),
+      118 |         status: 'unpaid',
+
+      at Object.id (app/api/invoices/__tests__/route.test.ts:115:28)
+
+(node:81827) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+FAIL ui app/(authenticated)/invoices/create/__tests__/page.test.tsx
+  ● Test suite failed to run
+
+    Your test suite must contain at least one test.
+
+      at onResult (node_modules/@jest/core/build/TestScheduler.js:133:18)
+      at node_modules/@jest/core/build/TestScheduler.js:254:19
+      at node_modules/emittery/index.js:363:13
+          at Array.map (<anonymous>)
+      at Emittery.emit (node_modules/emittery/index.js:361:23)
+
+FAIL ui app/(authenticated)/orders/create/__tests__/page.test.tsx
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'interceptors')
+
+      15 |
+      16 | // エラーレスポンスのインターセプター
+    > 17 | instance.interceptors.response.use(
+         |          ^
+      18 |   response => response,
+      19 |   error => {
+      20 |     const { response } = error;
+
+      at Object.interceptors (lib/api.ts:17:10)
+      at Object.require (/Volumes/strage/opus_localdev/opus_dev/app/(authenticated)../../../../orders/create/page.tsx:3:1)
+      at Object.require (/Volumes/strage/opus_localdev/opus_dev/app/(authenticated)../../../../orders/create/__tests__/page.test.tsx:2:1)
+
+Test Suites: 6 failed, 6 total
+Tests:       11 failed, 11 total
+Snapshots:   0 total
+Time:        1.029 s
+Ran all test suites in 2 projects.

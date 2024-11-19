@@ -12,7 +12,7 @@ export async function authMiddleware(request: NextRequest) {
   try {
     await verifyToken(token);
     console.log('認証トークンが有効です。');
-    return NextResponse.next();
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   } catch (error) {
     console.error('認証エラー:', error);
     return NextResponse.redirect(new URL('/login', request.url));

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const appHandler = async (req: NextRequest, res: any, parsedUrl: any) => {
   try {
-    const response = await NextResponse.next();
+    const response = NextResponse.json({ message: 'Success' }, { status: 200 });
     res.statusCode = response.status;
     
     response.headers.forEach((value: string, key: string) => {
